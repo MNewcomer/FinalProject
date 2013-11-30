@@ -9,8 +9,8 @@
 
 #------Begin User input-----------------------------
 density <- quote((1/sqrt(2*pi))*exp((-x^2)/2)) #Or could we have the user quote something like dnorm(mu, sigma)?
-k<-6 #number of points to make the upper hull. Minimum is 2
-d<-c(-3,3) #user specified boundaries of domain
+k<-2 #starting value for the number of absiccae
+d<-c(-1,1) #user specified boundaries of domain
 #work with standard normal to begin with
 #-----End user Input--------------------------------
 
