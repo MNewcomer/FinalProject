@@ -116,5 +116,12 @@ while(length(sample)<accept){
 }
 #------End Sampling-----------------------------
 
+#------Begin Result-----------------------------
+sample
+xabs
+#------End Result-----------------------------
+
+
+
 
 
