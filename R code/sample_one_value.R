@@ -72,16 +72,16 @@ uk_x<- function(x){
 sample=c()
 
 if(x>=xabs[1] & x<=xabs[k]){
-	if(u<lk_x(x)/uk_x(x))
+	if(w<lk_x(x)/uk_x(x))
 	sample[1]=x
-	else if(u<exp(h(x))/uk_x(x))
+	else if(w<exp(h(x))/uk_x(x))
 	sample[1]=x
 	else
 	xabs[k+1]=x
 }
 
 if(x<=xabs[1] & x>=xabs[k]){
-	if(u<exp(h(x))/uk_x(x))
+	if(w<exp(h(x))/uk_x(x))
 	sample[1]=x
 	else
 	xabs[k+1]=x
