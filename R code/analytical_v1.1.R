@@ -7,7 +7,7 @@ set.seed(0)
 #------Begin User input-----------------------------
 density <- quote((1/sqrt(2*pi))*exp((-x^2)/2))
 xabs<-c(-1,1) #user specified starting points
-accept<-300 #total number of points required to accept
+accept<-5000 #total number of points required to accept
 #-----End user Input--------------------------------
 
 #------Prep Function to define h(x) and h'(x)-----------------------------
@@ -89,7 +89,7 @@ while(length(sample)<accept){
 		remain_prob=u-prob_cumulative[n-1]
 	}
 	#Second, integrate from the nth z to x*, set this integral to the remaining probablity, and solve x*. (Don't spend time reading this mess. We can go over it together when we meet :)
-	x_star=log(hPrime(xabs[n])*remain_prob/exp(h(xabs[n])-hPrime(xabs[n])*xabs[n])+exp(hPrime(xabs[n])*segment[2*n-1]))/hPrime(xabs[n])
+	x_star=log(sum(prob)*hPrime(xabs[n])*remain_prob/exp(h(xabs[n])-hPrime(xabs[n])*xabs[n])+exp(hPrime(xabs[n])*segment[2*n-1]))/hPrime(xabs[n])
 
 	###Now that we have the x*, just calculate the upper and lower bound.
 	upper=exp(h(xabs[n])+(x_star-xabs[n])*hPrime(xabs[n]))
@@ -107,9 +107,10 @@ while(length(sample)<accept){
 	w=runif(1)
 	if(w<=lower/upper){
 		sample <- c(sample, x_star)
-  	} else if(w<=exp(h(x_star))/upper){
+  	} else {
+		if(w<=exp(h(x_star))/upper){
 		sample <- c(sample, x_star)
-	} else {
+		} 
      		xabs[k+1] <- x_star
       	xabs <- sort(xabs)
 	}
@@ -119,8 +120,17 @@ while(length(sample)<accept){
 #------Begin Result-----------------------------
 sample
 xabs
-#------End Result-----------------------------
 
+##ploting for testing
+par(mfrow=c(2,2))
+#True standard normal
+x=seq(-3,3,by=0.01)
+plot(x,dnorm(x),type="l")
+#Histogram of a sample from rnorm()
+hist(rnorm(5000),freq=F)
+#Histogram of a sample from our function
+hist(sample,freq=F)
+#------End Result-----------------------------
 
 
 
