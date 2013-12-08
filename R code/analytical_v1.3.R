@@ -10,8 +10,9 @@ density <- quote((1/sqrt(2*pi))*exp((-x^2)/2))
 xabs <- c(-1,1) #user-specified starting abcissae
 accept <- 5000 #total number of points required to accept
 
-#Make sure to initialize the function "ARS" before running line 12 
+#Make sure to initialize the function "ARS" and "ARS_testing" before running line 12 
 ARS_values <- ARS(density, xabs, accept) #run this line to run the entire sampling scheme
+ARS_testing(ARS_values)
 #-----End user Input--------------------------------
 
 
@@ -125,8 +126,8 @@ ARS <- function(density, xabs, accept, endpoints=c(-Inf, Inf)){
     }
     
     ###Test for concavity before moving on to the next sample round
-    #Send xabs to the the hprime function
-    concave <- hPrime(xabs)
+    #Send xabs to the the h_prime function
+    concave <- h_prime(xabs)
     runs <- (length(rle(sign(concave))$lengths)) # for concavity there should only be two runs and one switch in the runs
     if(runs>2){
       print("The log density function is not concave.")
@@ -138,20 +139,21 @@ return(sample)
 }
 #------End ARS Scheme-----------------------------
 
+#-----Begin Testing Scheme--------------------------
 ARS_testing <- function(sample){
   #------Begin Result-----------------------------
   
   ##user visual plot for testing
   
-  par(mfrow=c(3,1))
+  par(mfrow=c(2,1))
   #True standard normal
-  x=seq(-3,3,by=0.01)
-  plot(x,dnorm(x), type="l", xlim=c(-4, 4), ylim=c(0, 0.4), main="Standard Normal PDF")
-  #Histogram of a sample from rnorm()
-  hist(rnorm(5000), freq=F, xlim=c(-4, 4), ylim=c(0, 0.4))
+  x=seq(-4,4,by=0.01)
+  #Histogram of a sample from rnorm() with N(0,1) pdf lines
+  hist(rnorm(5000), freq=F, xlim=c(-4, 4), ylim=c(0, 0.4), main="Histogram of rnorm(5000) \n with N(0,1) PDF superimposed", xlab="")
+  lines(x, dnorm(x))
   #Histogram of a sample from our function
-  hist(sample, freq=F, xlim=c(-4, 4), ylim=c(0, 0.4), main="Histogram of ARS sample")
-  input <- readline("Press <y> if these plots look correct.  Press any other key to stop the testing script.")
+  hist(sample, freq=F, xlim=c(-4, 4), ylim=c(0, 0.4), main="Histogram of ARS sample", xlab="")
+  input <- readline("Press <y> followed by <return> if these plots appear to match.\nPress any other key followed by <return> to stop the testing script.")
   if (length(grep("y", input, ignore.case=TRUE))==0) {
     print("User determined that plots do not match.  Terminating testing algorithm.")
     stop(call. = FALSE)
@@ -163,9 +165,9 @@ ARS_testing <- function(sample){
     ###Kolmogorov-Smirnov test for equality of two cdf distributions
     KS <- ks.test(sample, "pnorm", 3, 2) # two-sided, exact
     par(mfrow=c(1,1))
-    plot(sample,pnorm(sample, mean = 0, sd = 1, lower.tail = TRUE, log.p = FALSE),lty=1,col="red")
-    lines(x,pnorm(x, mean = 0, sd = 1, lower.tail = TRUE, log.p = FALSE),lty=1,col="blue")
-  
+    plot(ecdf(sample),lty=1, col="red", lwd=0.5, main="CDF Comparison Plot")
+    lines(x, pnorm(x, mean = 0, sd = 1, lower.tail = TRUE, log.p = FALSE),lty=2,col="blue", lwd=1.25)
+    legend("bottomright", legend=c("Empirical CDF of ARS Sample", "Standard Normal CDF"), cex=0.3, col=c("red","blue"), lty=c(1, 2), lwd=c(0.5, 1.25))
     ###Report the pvalue
     if(KS[[2]]<0.001){print("P-value < 0.001. K-S test passed.")}
     else{print("P-value does not indicate statistical equality between the distributions")}
@@ -173,7 +175,7 @@ ARS_testing <- function(sample){
   #------End Result-----------------------------
 }
 }
+#-----End Testing Scheme-----------------------------
 
 
-#lognormal
-density <- quote( (3*2^3)/(x^(3+1)) )
+
