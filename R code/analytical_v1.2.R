@@ -21,9 +21,9 @@ ARS <- function(density,xabs,accept){
   #------Prep Function to define h(x) and h'(x)-----------------------------
   
   prep <- function(f){
-    logQuote <- bquote(log(.(density)))
-    deriv<- D(logQuote, "x")
-    return(list(logQuote, deriv))
+    log_quote <- bquote(log(.(density)))
+    deriv<- D(log_quote, "x")
+    return(list(log_quote, deriv))
   }
   #compute the log and the derivative of the log in a preparation function
   
@@ -33,11 +33,11 @@ ARS <- function(density,xabs,accept){
     return(eval(prep[[1]]))
   }
   
-  hPrime <- function(x){
+  h_prime <- function(x){
     return(eval(prep[[2]]))
   }
   
-  #h and hPrime take x as the sole input and can be used in the computation of the equations in the paper algorithm
+  #h and h_prime take x as the sole input and can be used in the computation of the equations in the paper algorithm
   #------End Prep Function to define h(x) and h'(x)-----------------------------
   
   
@@ -48,7 +48,7 @@ ARS <- function(density,xabs,accept){
   zrange <- function(xabs){
     k <- length(xabs)
     j <- 1:(k-1)
-    z[j] <- (h(xabs[j+1])-h(xabs[j])-xabs[j+1]*hPrime(xabs[j+1])+xabs[j]*hPrime(xabs[j]))/(hPrime(xabs[j])-hPrime(xabs[j+1]))
+    z[j] <- (h(xabs[j+1])-h(xabs[j])-xabs[j+1]*h_prime(xabs[j+1])+xabs[j]*h_prime(xabs[j]))/(h_prime(xabs[j])-h_prime(xabs[j+1]))
     return(z)
   }
   
@@ -76,7 +76,7 @@ ARS <- function(density,xabs,accept){
     prob <- c()
     for (i in 1:k){
       uk_x<-function(x){
-        exp(h(xabs[i])+(x-xabs[i])*hPrime(xabs[i]))
+        exp(h(xabs[i])+(x-xabs[i])*h_prime(xabs[i]))
       }
       prob[i]<-integrate(uk_x,interval[i],interval[i+1])$value
     }
@@ -97,10 +97,10 @@ ARS <- function(density,xabs,accept){
       remain_prob=u-prob_cumulative[n-1]
     }
     #Second, integrate from the nth z to x*, set this integral to the remaining probablity, and solve x*. (Don't spend time reading this mess. We can go over it together when we meet :)
-    x_star=log(sum(prob)*hPrime(xabs[n])*remain_prob/exp(h(xabs[n])-hPrime(xabs[n])*xabs[n])+exp(hPrime(xabs[n])*segment[2*n-1]))/hPrime(xabs[n])
+    x_star=log(sum(prob)*h_prime(xabs[n])*remain_prob/exp(h(xabs[n])-h_prime(xabs[n])*xabs[n])+exp(h_prime(xabs[n])*segment[2*n-1]))/h_prime(xabs[n])
     
     ###Now that we have the x*, just calculate the upper and lower bound.
-    upper=exp(h(xabs[n])+(x_star-xabs[n])*hPrime(xabs[n]))
+    upper=exp(h(xabs[n])+(x_star-xabs[n])*h_prime(xabs[n]))
     #Remember we discussed that x* can fall into the two "tails". The paper saids if it does, then lower bound is -Inf.
     lower_segment=sort(c(-Inf,xabs,Inf))
     if(x_star<=xabs[1] || x_star>=xabs[k]){
@@ -124,8 +124,8 @@ ARS <- function(density,xabs,accept){
     }
     
     ###Test for concavity before moving on to the next sample round
-    #Send xabs to the the hprime function
-    concave <- hPrime(xabs)
+    #Send xabs to the the h_prime function
+    concave <- h_prime(xabs)
     runs <- (length(rle(sign(concave))$lengths)) # for concavity there should only be two runs and one switch in the runs
     if(runs>2){
       print("The log density function is not concave.")
