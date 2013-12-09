@@ -1,0 +1,49 @@
+\documentclass{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\begin{document}
+
+\title{Group Reflection: Adaptive Rejection Sampling\\STAT 243 Final Project}
+\author{Matt Boyas, Michelle Newcomer, Ying Chao Shi}
+
+\date{December 13, 2013}
+\maketitle
+This short paper serves as an interpretory document to supplement the attached R code--file names go here--that implement the Adaptive Rejection Sampling (ARS) proposed by Gilks and Wild (1992) and then test the aforementioned ARS code.
+\section{Initial Approach}
+We initally began this project by ensuring that each of us understood all portions of the Gilks and Wild ARS algorithm.  Even though we would not directly be coding everything, we felt it was important for every group member to be versed in the entire project, particularly because we were already operating as a 3-person group and Michelle was going to be attending a conference and generally unavailable to meet and do extensive amounts of work the week before the project due date.  Any one of us needed to be able to jump in and do any step of the project.  Following discussions of the overall ARS algorithm, we began the coding process, trying to keep modularity in mind as we went ahead. 
+ 
+\section{The Coding Process}
+\subsection{ARS Code}
+We first decided to modularly encode in functions all of the various equations defined in the paper.  Matt started off the group by writing functions to calculate the log of the user-specified density, $h$ and $h'$.  Michelle and Ying then used those functions to write code to calculate functions 1--4 as defined in Gilks \& Wild based on starting abcissae defined by the user. 
+
+Then came the tricky part -- determining how to sample from the piecwise upper hull and coding the self-updating feature of the ARS algorithm.  We initially began the process by attempting to generate extremely long vectors of values along each of the piecewise functions and then use the \textit{sample()} function to sample one of those points; however, we realized that the costs of using such an simulation to sample would be quite large, particularly for unbounded densities (for how can you generate a vector of values from -$\infty$ to a specific abcissa?).  
+
+After some work, Ying discovered an analytical approach to sampling relying on the CDF, and this approach is what is encoded into the ARS code.  First determine the area under each of the piecewise upper hulls (the intersections between each piece denoted by $z_*$), and normalize such that the total area is equivalent to $1$.  Then generate $q\sim U\left(0, 1\right)$.  Use the relative normalized areas and this $q$ to determine from which of the upper hull pieces to sample, and then subtract the areas of any of the pieces before this piece from $q$ to get some area $A$.  $A$ is the area under the chosen piece from its leftmost $z_*$ value to the desired $x^*$ sampled from the upper bound, or equivalently:
+
+$$A=\int_{z_*}^{x^*}\frac{e^{ax+b}}{c}dx$$
+where c is the total area under all of the piecewise upper hulls before normalization and $ax+b$ is the equation of the chosen piece of the upper hull.  Subbing in the upper hull calculation from Gilks and Wild and solving the integral gives:
+
+\begin{align*}
+A &= \int_{z_*}^{x^*}\frac{e^{ax+b}}{c}dx\\
+&= \int_{z_*}^{x^*}\frac{e^{a\left(x-x_j\right)+b}}{c}dx\\
+&= \frac{e^{b-ax_j}}{c}\int_{z_*}^{x^*}e^{ax}dx\\
+&= \frac{e^{b-ax_j}}{c}\frac{1}{a}\left.e^{ax}\right|_{z_*}^{x^*}\\
+&= \frac{e^{b-ax_j}}{c}\frac{1}{a}\left(e^{ax^*} - e^{az_*}\right)\\
+x^* &= \frac{1}{a}\text{log}\left(A\frac{ca}{e^{b-ax_j}}-e^{az_*}\right)
+\end{align*}
+After analytically solving for this sampling method, Ying implemented it into the code.  Then Michelle and Matt looped the code through, adding the specifics of sampling and updating steps defined by Gilks and Wild and having the code terminate once the desired sample size has been accepted by the algorithm.  Finally, Michelle wrote a nice wrapper function around all the code, thus creating our version of the ARS algorithm.
+
+\subsection{Testing Code}
+We approached the testing section of our project similarly to how we approached encoding the ARS algorithm.  Michelle began the testing section of the code, which we then broke out into its own function, thinking that we should keep the ARS algorithm and the code testing separate for modularity concerns.  We first produce a series of plots comparing an ARS sample from the standard normal to the \textit{rnorm} function built into R.  The function prompts the user to make a decision as to whether the plots look similar enough to pass the test; the code proceeds according to the user input.
+
+If the user decides to pass the first test, the testing algorithm compares the empirical CDFs of samples generated from the ARS test to a theoretical distribution using the Kolmogorov-Smirnov (K-S) test.  The function passes or fails this portion of the testing algorithm based on a p-value cutoff, and produces plots as well as status messages to the user.  Matt came up with the idea of using the K-S test, and Michelle initially coded the section.
+
+WHAT OTHER TESTS - feed it an intentionally non-logconcave function?  do the above tests with a few densities?
+
+\section{Reflection and Group Dynamics}
+We broke up the work in such a way that a single person started a step of the project, pushed his or her work to the GitHub repository, and solicited input, adjustments, and edits from the other team members.  In the above section (2), we mentioned individuals who started certain portions of the code; in addition, Matt took the lead as primary, initial author of this reflection paper.  However, it should be noted that everyone was involved in every piece of this project, and nothing can be uniquely attributed to a single group member.  The final pieces that we are turning in truly represent a full group effort.
+
+R Code submitted on bSpace by: XXXXXXX
+
+\end{document}
