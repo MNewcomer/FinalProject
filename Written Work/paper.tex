@@ -30,7 +30,7 @@ A &= \int_{z_*}^{x^*}\frac{e^{ax+b}}{c}dx\\
 &= \frac{e^{b-ax_j}}{c}\int_{z_*}^{x^*}e^{ax}dx\\
 &= \frac{e^{b-ax_j}}{c}\frac{1}{a}\left.e^{ax}\right|_{z_*}^{x^*}\\
 &= \frac{e^{b-ax_j}}{c}\frac{1}{a}\left(e^{ax^*} - e^{az_*}\right)\\
-x^* &= \frac{1}{a}\text{log}\left(A\frac{ca}{e^{b-ax_j}}-e^{az_*}\right)
+x^* &= \frac{1}{a}\text{log}\left(A\frac{ca}{e^{b-ax_j}}+e^{az_*}\right)
 \end{align*}
 After analytically solving for this sampling method, Ying implemented it into the code.  Then Michelle and Matt looped the code through, adding the specifics of sampling and updating steps defined by Gilks and Wild and having the code terminate once the desired sample size has been accepted by the algorithm.  Finally, Michelle wrote a nice wrapper function around all the code, thus creating our version of the ARS algorithm.
 
