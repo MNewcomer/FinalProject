@@ -22,25 +22,27 @@ We first decided to modularly encode in functions all of the various equations d
 
 Then came the tricky part -- determining how to sample from the piecwise upper hull and coding the self-updating feature of the ARS algorithm.  We initially began the process by attempting to generate extremely long vectors of values along each of the piecewise functions and then use the \textit{sample()} function to sample one of those points; however, we realized that the costs of using such an simulation to sample would be quite large, particularly for unbounded densities (for how can you generate a vector of values from -$\infty$ to a specific abcissa?).  
 
-After some work, Ying discovered an analytical approach to sampling relying on the CDF, and this approach is what is encoded into the ARS code.  First determine the area under each of the piecewise upper hulls (the intersections between each piece denoted by $z_*$), and normalize such that the total area is equivalent to $1$.  Then generate $q\sim U\left(0, 1\right)$.  Use the relative normalized areas and this $q$ to determine from which of the upper hull pieces to sample, and then subtract the areas of any of the pieces before this piece from $q$ to get some area $A$.  $A$ is the area under the chosen piece from its leftmost $z_*$ value to the desired $x^*$ sampled from the upper bound, or equivalently:
+After some work, Ying discovered an analytical approach to sampling relying on the CDF, and this approach is what is encoded into the ARS code.  First determine the area under each of the piecewise upper hulls (the intersections between each piece denoted by $z_*$), and normalize such that the total area is equivalent to $1$.  Then generate $u\sim U\left(0, 1\right)$.  Use the relative normalized areas and this $u$ to determine from which of the upper hull pieces to sample, and then subtract the areas of any of the pieces before this piece from $u$ to get some area $A$.  $A$ is the area under the chosen piece from its leftmost $z_*$ value to the desired $x^*$ sampled from the upper bound, or equivalently:
 
-$$A=\int_{z_*}^{x^*}\frac{e^{ax+b}}{c}dx$$
+$$A= \int_{z_*}^{x^*}\frac{e^{a\left(x-x_j\right)+b}}{c}dx$$
 where c is the total area under all of the piecewise upper hulls before normalization and $ax+b$ is the equation of the chosen piece of the upper hull.  Subbing in the upper hull calculation from Gilks and Wild and solving the integral gives:
 
 \begin{align*}
-A &= \int_{z_*}^{x^*}\frac{e^{ax+b}}{c}dx\\
-&= \int_{z_*}^{x^*}\frac{e^{a\left(x-x_j\right)+b}}{c}dx\\
+A &= \int_{z_*}^{x^*}\frac{e^{a\left(x-x_j\right)+b}}{c}dx\\
 &= \frac{e^{b-ax_j}}{c}\int_{z_*}^{x^*}e^{ax}dx\\
 &= \frac{e^{b-ax_j}}{c}\frac{1}{a}\left.e^{ax}\right|_{z_*}^{x^*}\\
 &= \frac{e^{b-ax_j}}{c}\frac{1}{a}\left(e^{ax^*} - e^{az_*}\right)\\
 x^* &= \frac{1}{a}\text{log}\left(A\frac{ca}{e^{b-ax_j}}+e^{az_*}\right)
 \end{align*}
+
+A special case was the exponential distribution. After taken the logarithm, the function became a straight line, so the upper hull was the same as the function. No matter which initial values were chosen, the first derivatives at those points were identical. This would make the denominator to be zero when $z_*$ was calculated. Thus,  for exponential distributions, we directly applied the inverse CDF method without forming the upper bounds.
+
 After analytically solving for this sampling method, Ying implemented it into the code.  Then Michelle and Matt looped the code through, adding the specifics of sampling and updating steps defined by Gilks and Wild and having the code terminate once the desired sample size has been accepted by the algorithm.  Matt built in checks to make sure that the density is loarithmically concave and that the user-specified initial abcissae are within the density's domain.  Finally, Michelle wrote a nice wrapper function around all the code, thus creating our version of the ARS algorithm.
 
 The user then must initialize the ARS wrapper function \textit{ARS()} and then can run the code to produce the final samples and plots. Inputs to the ARS function are as follows:
 \begin{enumerate}
 \item \textit{density} -- a density function in the form of a quoted R expression
-\item \textit{xabs} -- two initial $x$ abcissae points in vector form
+\item \textit{xabs} -- two initial $x$ abcissae points in vector form; the first derivative should be negative at the first point and positive at the second point
 \item \textit{accept} -- the number of points required to accept for a complete simulation of the density function
 \item \textit{endpoints} -- an optional argument where the user can specify the density's domain (this argument defaults to the whole real line)
 \end{enumerate}
