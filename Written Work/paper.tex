@@ -2,8 +2,11 @@
 \usepackage[margin=1in]{geometry}
 \usepackage{amsmath}
 \usepackage{amsthm}
+\usepackage{listings}
+    
 \begin{document}
-
+\lstset{language=R, basicstyle=\ttfamily, columns=flexible}
+    
 \title{Group Reflection: Adaptive Rejection Sampling\\STAT 243 Final Project}
 \author{Matt Boyas, Michelle Newcomer, Ying Chao Shi}
 
@@ -32,21 +35,46 @@ A &= \int_{z_*}^{x^*}\frac{e^{ax+b}}{c}dx\\
 &= \frac{e^{b-ax_j}}{c}\frac{1}{a}\left(e^{ax^*} - e^{az_*}\right)\\
 x^* &= \frac{1}{a}\text{log}\left(A\frac{ca}{e^{b-ax_j}}+e^{az_*}\right)
 \end{align*}
-After analytically solving for this sampling method, Ying implemented it into the code.  Then Michelle and Matt looped the code through, adding the specifics of sampling and updating steps defined by Gilks and Wild and having the code terminate once the desired sample size has been accepted by the algorithm.  Finally, Michelle wrote a nice wrapper function around all the code, thus creating our version of the ARS algorithm.
+After analytically solving for this sampling method, Ying implemented it into the code.  Then Michelle and Matt looped the code through, adding the specifics of sampling and updating steps defined by Gilks and Wild and having the code terminate once the desired sample size has been accepted by the algorithm.  Matt built in checks to make sure that the density is loarithmically concave and that the user-specified initial abcissae are within the density's domain.  Finally, Michelle wrote a nice wrapper function around all the code, thus creating our version of the ARS algorithm.
 
-Our ARS function first requests the user to input a density function, two initial boundary points, and the number of points required to accept for a complete simulation of the density function. The user then much run the $ARS$ wrapper function and the $ARS testing$ function first to initialize these functions, and then can run the code to produce the final samples and plots. 
+The user then must initialize the ARS wrapper function \textit{ARS()} and then can run the code to produce the final samples and plots. Inputs to the ARS function are as follows:
+\begin{enumerate}
+\item \textit{density} -- a density function in the form of a quoted R expression
+\item \textit{xabs} -- two initial $x$ abcissae points in vector form
+\item \textit{accept} -- the number of points required to accept for a complete simulation of the density function
+\item \textit{endpoints} -- an optional argument where the user can specify the density's domain (this argument defaults to the whole real line)
+\end{enumerate}
+Sample function syntax for a $Gamma\left(5,1\right)$ density:
+
+\begin{lstlisting}
+density <- quote(1/24*x^4*exp(-x))
+xabs <- c(2, 6)
+accept <- 1000
+endpoints <- c(0, Inf)
+ARS(density, xabs, accept, endpoints)
+\end{lstlisting}
+
 
 \subsection{Testing Code}
 We approached the testing section of our project similarly to how we approached encoding the ARS algorithm.  Michelle began the testing section of the code, which we then broke out into its own function, thinking that we should keep the ARS algorithm and the code testing separate for modularity concerns.  We first produce a series of plots comparing an ARS sample from the standard normal to the \textit{rnorm} function built into R.  The function prompts the user to make a decision as to whether the plots look similar enough to pass the test; the code proceeds according to the user input.
 
-If the user decides to pass the first test, the testing algorithm compares the empirical CDFs of samples generated from the ARS test to a theoretical distribution using the Kolmogorov-Smirnov (K-S) test.  The Kolmogorov-Smirnov (K-S) tests for equality of two continuous probability distributions, with the null hypothesis, in our case, being that the two CDFs are from the same distribution. The function passes or fails this portion of the testing algorithm based on a p-value cutoff, and produces plots as well as status messages to the user.  Bsed on the user input, and the final p-value, similarly between distributions can be confirmed. Matt came up with the idea of using the K-S test, and Michelle initially coded the section.
+If the user decides to pass the first test, the testing algorithm compares the empirical CDFs of samples generated from the ARS test to a theoretical distribution using the Kolmogorov-Smirnov (K-S) test, again using the standard normal density.  The Kolmogorov-Smirnov (K-S) tests for equality of two continuous probability distributions, with the null hypothesis, in our case, being that the two CDFs are from the same distribution. The function passes or fails this portion of the testing algorithm based on a user-specified p-value cutoff, and produces plots as well as status messages to the user.  Bsed on the user input, and the final p-value, similarly between distributions can be confirmed. Matt came up with the idea of using the K-S test, and Michelle initially coded the section.
 
-Non-log concave test: Include text here after we test a non-log concave function. 
+If the code passes the K-S test at the desired significance level, the testing code then intentionally feeds a non-logarithmically concave function (the $Pareto\left(3,2\right)$ distribution) to the \textit{ARS()} function and checks to see if our ARS code returns the correct error for such a non-log concave function.  If this test is passed, then the testing code runs the \textit{ARS()} function with a $Beta\left(2,2\right)$ density and initial abcessar equal to $-2$ and $0.7$; the testing code looks for an error message signifying that one of the starting abcessae is outside of the density domain.  Matt coded these two tests.
 
-Log concave test with the gamma function: Include test here with a different log-concave function. 
+The user then must initialize the ARS testing function \textit{ARS\_testing()} and then can run the testing code. There is only one input to the ARS testing function:
+\begin{enumerate}
+\item \textit{alpha} -- the desired significance level for the Kolmogorov-Smirnov test (defaults to 0.001)
+\end{enumerate}
+Sample function syntax:
+
+\begin{lstlisting}
+alpha <- 0.05
+ARS_testing(alpha)
+\end{lstlisting}
 
 \section{Reflection and Group Dynamics}
-We broke up the work in such a way that a single person started a step of the project, pushed his or her work to the GitHub repository, and solicited input, adjustments, and edits from the other team members.  In the above section (2), we mentioned individuals who started certain portions of the code; in addition, Matt took the lead as primary, initial author of this reflection paper.  However, it should be noted that everyone was involved in every piece of this project, and nothing can be uniquely attributed to a single group member.  Our team collaborated using GitHub with a naming convention for all files and folders in the archive. Our code also follows standard naming convention practices. We also communicated daily by email to update each other on our progress when the next stage of work was ready for the next person. The final pieces that we are turning in truly represent a full group effort. 
+We broke up the work in such a way that a single person started a step of the project, pushed his or her work to the GitHub repository, and solicited input, adjustments, and edits from the other team members.  In the above section (2), we mentioned individuals who started certain portions of the code; in addition, Matt took the lead as primary, initial author of this reflection paper and Ying did a bit of debugging work on the ARS code related to the domains of the densities.  However, it should be noted that everyone was involved in every piece of this project, and nothing can be uniquely attributed to a single group member.  Our team collaborated using GitHub, developing a unified naming convention for all files and folders in the repository. Our code also follows a standard naming convention practice.  We also communicated daily by email to update each other on our progress when the next stage of work was ready for the next person. The final pieces that we are turning in truly represent a full group effort. 
 
 R Code submitted on bSpace by: XXXXXXX
 
