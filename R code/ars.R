@@ -2,52 +2,6 @@
 #Code Version 12/11/2013
 #Known Bugs: None
 
-set.seed(0)
-#only set the seed if you are trying to replicate algorithmic output
-
-#------Begin User input-----------------------------
-
-#N(0,1)
-density <- quote((1/sqrt(2*pi))*exp((-x^2)/2))
-xabs <- c(-1,1) #user-specified starting abcissae
-accept <- 1000 #total number of points required to accept
-ARS_values <- ars(density, xabs, accept) #run this line to run the entire sampling scheme
-
-#N(2,2)
-density1 <- quote((1/sqrt(2*pi*4))*exp(-(x-2)^2/(2*4)))
-xabs1 <- c(1,3)
-accept <- 1000 
-ARS_values1 <- ars(density1,xabs1,accept)
-
-#exp(0.5)
-density2 <- quote(0.5*exp(-0.5*x))
-xabs2 <- c(1,3)
-accept <- 1000
-ARS_values2 <- ars(density2,xabs2,accept)
-
-#Gamma(5,1)
-density3 <- quote(1/24*x^4*exp(-x))
-xabs3 <- c(2,6)
-accept <- 1000
-endpoints3 <- c(0,Inf)
-ARS_values3 <- ars(density3,xabs3,accept,endpoints3)
-
-#Beta(2,2)
-density4 <- quote(6*x*(1-x))
-xabs4 <- c(0.3,0.7)
-accept <- 1000 
-endpoints4 <- c(0,1)
-ARS_values4 <- ars(density4,xabs4,accept,endpoints4)
-
-#Pareto(2,3)
-density5 <- quote((3*2^3)/x^(3+1))
-xabs5 <- c(2, 5)
-accept <- 1000
-endpoints5 <- c(1,Inf)
-ARS_values5 <- ars(density5,xabs5,accept,endpoints5)
-
-#-----End user Input--------------------------------
-
 
 
 #------Begin ARS Scheme-----------------------------
@@ -59,7 +13,7 @@ ars <- function(density, xabs, accept, endpoints=c(-Inf, Inf)){
   
   #--------Check to make sure abcissae are within the density endpoints------
   if (xabs[1]<endpoints[1] | xabs[2]>endpoints[2]){
-    stop("Initial abcissae are not in the density's specified domain.  Terminating ARS algorithm.")
+    stop("Initial abcissae are not in the density's specified domain. Terminating ARS algorithm.")
   }
   #--------End check to make sure abcissae are within the density endpoints------
 
@@ -88,8 +42,7 @@ ars <- function(density, xabs, accept, endpoints=c(-Inf, Inf)){
   
 
   #------Begin Functions for z and lower bound-----------------------------
-  #Vectorized equation 1
-  
+  #z  
   z <- c()
   zrange <- function(xabs){
     k <- length(xabs)
@@ -108,79 +61,83 @@ ars <- function(density, xabs, accept, endpoints=c(-Inf, Inf)){
   #------Begin Sampling-----------------------------
   #For exponential distributions, the upper bound is the same line as the original function. Thus, the inverse cdf method can be applied directly.
   if(h_prime(xabs[1])==h_prime(xabs[2])){
-	u=runif(accept)
+      u=runif(accept)
       sample=log(1-u)/h_prime(xabs[1])
-  }else{
+  } else {
 
- 	 sample <- c()
- 	 while(length(sample)<accept){
- 	   k=length(xabs) #the number of absiccae
- 	   
- 	   #The end points of the upper bound.
- 	   zvalue <- zrange(xabs)
- 	   interval <- c(endpoints[1], zvalue, endpoints[2]) #vector of the intervals for x
- 	   segment <- c(interval,xabs) #vector of the all the points
- 	   segment <- sort(segment)#sorted
- 	   
- 	   #The probabilities under each piece.
- 	   prob <- c()
- 	   for (i in 1:k){
- 	     uk_x <- function(x){
- 	       exp(h(xabs[i])+(x-xabs[i])*h_prime(xabs[i]))
- 	     }
+	  #Check to make sure the first derivatives of the two abcissae have opposite signs.
+	  if(sign(h_prime(xabs[1]))*sign(h_prime(xabs[2]))>0){
+		stop("Initial abcissae are not valid. Terminating ARS algorithm. Please refer to the paper and try again.")
+	  }
 
- 	     prob[i] <- integrate(uk_x,interval[i],interval[i+1])$value
- 	   }
- 	   
-    	#Scale these probabilities so that they add up to 1 (because the upper bound is a pdf).
-    	prob_each_piece=prob/sum(prob)
-   	 
-   	 ###Sample the x* using the inverse cdf method.
-   	 ##Generate a number from the uniform distribution, and this is our cdf.
-   	 u=runif(1)
-   	 ##Find the corresponding x*.
-   	 #First, check which piece we fall into. If we are in the first piece, integrate (the second step) directly. If we are in the nth piece (n>1), we have to subtract the probabilites of the previous n-1 pieces.
-   	 prob_cumulative=cumsum(prob_each_piece)
-   	 n=sum(u>prob_cumulative)+1 #The nth piece is chosen.
-   	 if(n==1){
-   	   remain_prob=u
-   	 } else {
-   	   remain_prob=u-prob_cumulative[n-1]
-   	 }
-   	 #Second, integrate from the nth z to x*, set this integral to the remaining probablity, and solve x*. 
-   	 x_star=log(sum(prob)*h_prime(xabs[n])*remain_prob/exp(h(xabs[n])-h_prime(xabs[n])*xabs[n])+exp(h_prime(xabs[n])*segment[2*n-1]))/h_prime(xabs[n])
-   	 
-   	 ###Now that we have the x*, just calculate the upper and lower bound.
-   	 upper=exp(h(xabs[n])+(x_star-xabs[n])*h_prime(xabs[n]))
-   	 #Remember we discussed that x* can fall into the two "tails". The paper saids if it does, then lower bound is -Inf.
-   	 lower_segment=sort(c(-Inf,xabs,Inf))
-   	 if(x_star<=xabs[1] || x_star>=xabs[k]){
-   	   lower=-Inf
-   	 } else {
-		m=sum(x_star>xabs) 
-	      lower=exp(((xabs[m+1]-x_star)*h(xabs[m])+(x_star-xabs[m])*h(xabs[m+1]))/(xabs[m+1]-xabs[m]))
-	    }
+	  #Sample the x* following the steps in the paper.
+	  sample <- c()
+	  while(length(sample)<accept){
+	  	k=length(xabs) #the number of absiccae
       
-      #Check for log concavity before moving forward
-      if (upper<exp(h(x_star)) | lower>exp(x_star)){
-       stop("The density function is not logarithmically concave.  Terminating ARS algorithm.")
-      }
+		zvalue <- zrange(xabs)  #z
+	  	interval <- c(endpoints[1], zvalue, endpoints[2]) #z and endpoints
+	  	segment <- c(interval,xabs) #z, endpoints and tangent points
+	  	segment <- sort(segment) #sorted
+       
+	  	#The probabilities under each piece.
+	  	prob <- c()
+	  	for (i in 1:k){
+			uk_x <- function(x){
+	      	exp(h(xabs[i])+(x-xabs[i])*h_prime(xabs[i]))
+	      	}
+			prob[i] <- integrate(uk_x,interval[i],interval[i+1])$value
+	  	}
+	         
+	  	#Scale these probabilities so that they add up to 1.
+	  	prob_each_piece=prob/sum(prob)
+	           
+	      #Generate a number from the uniform distribution to be our cdf.
+	  	u=runif(1)
+	
+	  	#Check which piece we fall into. 
+	  	prob_cumulative=cumsum(prob_each_piece)
+	  	n=sum(u>prob_cumulative)+1 #The nth piece is chosen.
+	
+		#Subtract the probabilites of the previous n-1 pieces. Skip if the first piece was chosen. 
+	  	if(n==1){
+	  		remain_prob=u
+	  	} else {
+	  		remain_prob=u-prob_cumulative[n-1]
+	  	}
+	
+		#Integrate from the nth z to x*, set this integral to be the remaining probablity, and solve for x*.
+	  	x_star=log(sum(prob)*h_prime(xabs[n])*remain_prob/exp(h(xabs[n])-h_prime(xabs[n])*xabs[n])+exp(h_prime(xabs[n])*segment[2*n-1]))/h_prime(xabs[n])
+	           
+	  	#Calculate the upper and lower bound for this x*. Lower bound is -Inf if x* falls into the two "tails".
+	  	upper=exp(h(xabs[n])+(x_star-xabs[n])*h_prime(xabs[n]))
+		lower_segment=sort(c(-Inf,xabs,Inf))
+		if(x_star<=xabs[1] || x_star>=xabs[k]){
+	  		lower=-Inf
+	 	} else {
+	 		m=sum(x_star>xabs)
+	      	lower=exp(((xabs[m+1]-x_star)*h(xabs[m])+(x_star-xabs[m])*h(xabs[m+1]))/(xabs[m+1]-xabs[m]))
+	  	}
       
-    	###Either put x* into the sample or add it as another tangent point.
-   	 #Generate w from uniform distribution.
-   	 w=runif(1)
-   	 if(w<=lower/upper){
-   	   sample <- c(sample, x_star)
-   	 } else {
-   	   if(w<=exp(h(x_star))/upper){
-   	     sample <- c(sample, x_star)
-   	   }
-   	   xabs[k+1] <- x_star
-   	   xabs <- sort(xabs)
-   	 }
+  		#Check for log concavity before moving forward
+	  	if (upper<exp(h(x_star)) | lower>exp(x_star)){
+	  		stop("The density function is not logarithmically concave. Terminating ARS algorithm.")
+	  	}
+	      
+	  	#Either put x* into the sample or add it as another tangent point.
+		w=runif(1)
+	  	if(w<=lower/upper){
+  			sample <- c(sample, x_star)
+  		} else {
+  			if(w<=exp(h(x_star))/upper){
+   			sample <- c(sample, x_star)
+      		}
+      		xabs[k+1] <- x_star
+      		xabs <- sort(xabs)
+      	}
   	}
-  }
-  	#------End Sampling-----------------------------
+  }	
+  #------End Sampling-----------------------------
 return(sample)
 }
 #------End ARS Scheme-----------------------------
@@ -194,12 +151,9 @@ test <- function(density1=quote((1/sqrt(2*pi))*exp((-x^2)/2)), xabs1=c(-1,1), ac
   print("Beginning distribution similarity test")
   
   ##user visual plot for testing
-  par(mfrow=c(2,1))
-  #True density
   x <- seq(min(sample),max(sample),by=0.01)
-  plot(x,eval(density1),type="l",xlab="",ylab="",main="True Density")
-  #Histogram of a sample from our function
-  hist(sample, freq=F, main="Histogram of ARS sample", xlab="",ylab="")
+  hist(sample, freq=F, main="Histogram of ARS sample with true density superimposed", xlab="",ylab="")
+  lines(x,eval(density1))
   input <- readline("Press <y> followed by <return> if these plots appear to match.\nPress any other key followed by <return> to stop the testing script.")
   if (length(grep("y", input, ignore.case=TRUE))==0) {
     warning("User determined that plots do not match. Test failed.")
@@ -225,19 +179,61 @@ test <- function(density1=quote((1/sqrt(2*pi))*exp((-x^2)/2)), xabs1=c(-1,1), ac
   print("Beginning test for non-log concave density.")
   err <- try(ars(density3, xabs3, accept3, endpoints3), silent=TRUE)
   if (is(err, "try-error")==FALSE){
-    warning("ARS algorithm did not detect non-log concave density.  Test failed.")
-  } else print("ARS algorithm detected non-log concave density.  Non-log concave test passed."  )
+    warning("ARS algorithm did not detect non-log concave density. Test failed.")
+  } else print("ARS algorithm detected non-log concave density. Non-log concave test passed." )
   
   ##Pass a density with starting abcissae<0
   print("Beginning test for an initial abcessa outside of defined density domain.")
   err <- try(ars(density4, xabs4, accept4, endpoints4), silent=TRUE)
   if (is(err, "try-error")==FALSE){
-    warning("ARS algorithm did not detect that an initial abcissa is outside of the defined density domain.  Test failed.")
-  } else {print("ARS algorithm detected initial abcessa outside of domain.  Initial abcessa domain test passed."  )}
+    warning("ARS algorithm did not detect that an initial abcissa is outside of the defined density domain. Test failed.")
+  } else {print("ARS algorithm detected initial abcessa outside of domain. Initial abcessa domain test passed." )}
   
   print("Testing algorithm complete.")
 }
 #-----End Testing Scheme-----------------------------
+
+#------Begin User input-----------------------------
+#N(0,1)
+density <- quote((1/sqrt(2*pi))*exp((-x^2)/2))
+xabs <- c(-1,1) #user-specified starting abcissae
+accept <- 1000 #total number of points required to accept
+ARS_values <- ars(density, xabs, accept) #run this line to run the entire sampling scheme
+
+#N(2,2)
+density1 <- quote((1/sqrt(2*pi*4))*exp(-(x-2)^2/(2*4)))
+xabs1 <- c(1,3)
+accept <- 1000
+ARS_values1 <- ars(density1,xabs1,accept)
+
+#exp(0.5)
+density2 <- quote(0.5*exp(-0.5*x))
+xabs2 <- c(1,3)
+accept <- 1000
+ARS_values2 <- ars(density2,xabs2,accept)
+
+#Gamma(5,1)
+density3 <- quote(1/24*x^4*exp(-x))
+xabs3 <- c(2,6)
+accept <- 1000
+endpoints3 <- c(0,Inf)
+ARS_values3 <- ars(density3,xabs3,accept,endpoints3)
+
+#Beta(2,2)
+density4 <- quote(6*x*(1-x))
+xabs4 <- c(0.3,0.7)
+accept <- 1000
+endpoints4 <- c(0,1)
+ARS_values4 <- ars(density4,xabs4,accept,endpoints4)
+
+#Pareto(2,3)
+density5 <- quote((3*2^3)/x^(3+1))
+xabs5 <- c(2, 5)
+accept <- 1000
+endpoints5 <- c(1,Inf)
+ARS_values5 <- ars(density5,xabs5,accept,endpoints5)
+
+#-----End user Input--------------------------------
 
 
 #------Run Testing Scheme------------------------

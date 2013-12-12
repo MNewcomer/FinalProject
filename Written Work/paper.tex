@@ -3,6 +3,7 @@
 \usepackage{amsmath}
 \usepackage{amsthm}
 \usepackage{listings}
+\usepackage{pdfpages}
     
 \begin{document}
 \lstset{language=R, basicstyle=\ttfamily, columns=flexible, breaklines=TRUE}
@@ -25,7 +26,7 @@ The most difficult part of algorithm coding was determining how to sample from t
 After some work, Ying discovered an analytical approach to sampling relying on the CDF, and this approach is what is encoded into the ARS code.  First determine the area under each of the piecewise upper hulls (the intersections between each piece denoted by $z_*$), and normalize such that the total area is equivalent to $1$.  Then generate $u\sim U\left(0, 1\right)$.  Use the relative normalized areas and this $u$ to determine from which of the upper hull pieces to sample, and then subtract the areas of any of the pieces before this piece from $u$ to get some area $A$.  $A$ is the area under the chosen piece from its leftmost $z_*$ value to the desired $x^*$ sampled from the upper bound, or equivalently:
 
 $$A= \int_{z_*}^{x^*}\frac{e^{a\left(x-x_j\right)+b}}{c}dx$$
-where c is the total area under all of the piecewise upper hulls before normalization and $ax+b$ is the equation of the chosen piece of the upper hull.  Subbing in the upper hull calculation from Gilks and Wild and solving the integral gives:
+where c is the total area under all of the piecewise upper hulls before normalization and $a\left(x-x_j\right)+b$ is the equation of the chosen piece of the upper hull.  Subbing in the upper hull calculation from Gilks and Wild and solving the integral gives:
 
 \begin{align*}
 A &= \int_{z_*}^{x^*}\frac{e^{a\left(x-x_j\right)+b}}{c}dx\\
@@ -37,9 +38,9 @@ x^* &= \frac{1}{a}\text{log}\left(A\frac{ca}{e^{b-ax_j}}+e^{az_*}\right)
 
 A special case was the exponential distribution. After taking the logarithm, the function becomes a straight line, so the upper hull was the same as the function. No matter which initial values were chosen, the first derivatives at those points were identical. This would force the denominator to be zero when $z_*$ was calculated. Thus,  for the exponential distributions, we directly applied the inverse CDF method without forming the upper bounds.
 
-After analytically solving for this sampling method, Ying implemented it into the code.  Then Michelle and Matt looped the code through, adding the specifics of sampling and updating steps defined by Gilks and Wild and having the code terminate once the desired sample size has been accepted by the algorithm.  Matt built in checks to make sure that the density is logarithmically concave and that the user-specified initial abcissae are within the density's domain.  Finally, Michelle wrote a nice wrapper function around all the code, thus creating our version of the ARS algorithm.
+After analytically solving for this sampling method, Ying implemented it into the code.  Then Michelle and Matt looped the code through, adding the specifics of sampling and updating steps defined by Gilks and Wild and having the code terminate once the desired sample size has been accepted by the algorithm.  Matt built in checks to make sure that the density is logarithmically concave and that the user-specified initial abcissae are within the density's domain and satisfy the requirement below.  Finally, Michelle wrote a nice wrapper function around all the code, thus creating our version of the ARS algorithm.
 
-The user then must initialize the ARS wrapper function \textit{ars()} and then can run the code to produce the final samples and plots. Inputs to the ARS function are as follows:
+The user then must initialize the ARS wrapper function \textit{ars()} and then can run the code to produce the final samples. Inputs to the ARS function are as follows:
 \begin{enumerate}
 \item \textit{density} -- a density function in the form of a quoted R expression
 \item \textit{xabs} -- two initial $x$ abcissae points in vector form; the first derivative should be negative at the first point and positive at the second point
@@ -90,6 +91,12 @@ Let's hypothetically change the first graphical test to use a $N\left(2,2\right)
 test(density1=quote((1/sqrt(2*pi*4))*exp(-(x-2)^2/(2*4))), xabs1=c(1,3), accept1=1000, endpoints1=c(-Inf, Inf))
 \end{lstlisting}
 
+\section{Results}
+The following plots show our results from several log-concave densities. For each density, the plot on the left is the histogram of the sample from our ARS function with the true density superimposed; the plot on the right is  CDF comparison for the Kolmogorov-Smirnov test. The sample size is 1000.\\
+
+\includegraphics[scale=0.45]{plot1.pdf}\\
+
+\includegraphics[scale=0.45]{plot4.pdf}
 
 
 \section{Reflection and Group Dynamics}
