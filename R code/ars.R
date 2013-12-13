@@ -193,7 +193,7 @@ test <- function(density1=quote((1/sqrt(2*pi))*exp((-x^2)/2)), xabs1=c(-1,1), ac
 }
 #-----End Testing Scheme-----------------------------
 
-#------Begin User input-----------------------------
+#------Begin Example User input-----------------------------
 #N(0,1)
 density <- quote((1/sqrt(2*pi))*exp((-x^2)/2))
 xabs <- c(-1,1) #user-specified starting abcissae
@@ -233,7 +233,7 @@ accept <- 1000
 endpoints5 <- c(1,Inf)
 ARS_values5 <- ars(density5,xabs5,accept,endpoints5)
 
-#-----End user Input--------------------------------
+#-----End example user Input--------------------------------
 
 
 #------Run Testing Scheme------------------------
