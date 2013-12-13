@@ -1,5 +1,5 @@
 #Matt Boyas, Michelle Newcomer, Ying Chao Shi
-#Code Version 12/11/2013
+#Code Version 12/12/2013
 #Known Bugs: None
 
 
@@ -67,7 +67,7 @@ ars <- function(density, xabs, accept, endpoints=c(-Inf, Inf)){
 
 	  #Check to make sure the first derivatives of the two abcissae have opposite signs.
 	  if(sign(h_prime(xabs[1]))*sign(h_prime(xabs[2]))>0){
-		stop("Initial abcissae are not valid. Terminating ARS algorithm. Please refer to the paper and try again.")
+		stop("Initial abcissae are not valid - the first derivatives have the same sign. Terminating ARS algorithm. Please check inputs and try again.")
 	  }
 
 	  #Sample the x* following the steps in the paper.
